@@ -7,5 +7,5 @@ urlpatterns = [
     path("auth/logout/", LogoutView.as_view(), name="logout"),
     path("shorten/", ShortenURLView.as_view(), name="shorten-url"),
     path("admin/list/", AdminURLListView.as_view(), name="admin-url-list"),
-    path("<str:short_code>/", RedirectURLView.as_view(), name="redirect"),
+    path("redirect/<str:short_code>/", RedirectURLView.as_view(), name="redirect"),
 ]

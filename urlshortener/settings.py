@@ -26,16 +26,6 @@ SECRET_KEY = env("SECRET_KEY")
 DEBUG = env.bool("DEBUG", default=False)
 ALLOWED_HOSTS = env("ALLOWED_HOSTS").split(",")
 
-# SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-# SESSION_COOKIE_AGE = 40  
-# SESSION_SAVE_EVERY_REQUEST = True
-# LOGOUT_REDIRECT_URL = '/login/'
-# Application definition
-# AUTH_PROFILE_MODULE = 'shorturl.UserProfile'
-# AUTH_PROFILE_MODULE = 'user.UserProfile'
-# AUTH_PROFILE_MODULE = 'User.UserProfile'
-# AUTH_PROFILE_MODULE = 'user.userprofile'
-
 
 # Application definition
 

@@ -12,7 +12,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import ShortURLSerializer, RegisterSerializer
-from .services import generate_short_code
+from .services import *
+from drf_spectacular.utils import extend_schema
 
 class RegisterView(APIView):
     """
@@ -40,51 +41,53 @@ class LogoutView(APIView):
             return Response({"error": "Invalid refresh token"}, status=400)
 
 class ShortenURLView(APIView):
-    """
-    Core: Submit long URL -> receive short_code.
-    - Idempotent: same URL returns same ShortURL record.
-    - Handles duplicates gracefully via get_or_create().
-    """
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        request=ShortURLSerializer,
+        responses={201: ShortURLSerializer}
+    )
     def post(self, request):
         original_url = request.data.get("original_url")
+
         if not original_url:
             return Response({"error": "original_url is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # get_or_create: if the URL already exists, returns existing record (idempotent)
-        short_obj, created = ShortURL.objects.get_or_create(
-            original_url=original_url,
-            defaults={"short_code": generate_short_code(original_url)},
-        )
+        short_obj, created = get_or_create_short_url(original_url, request.user)
 
-        serializer = ShortURLSerializer(short_obj)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(ShortURLSerializer(short_obj).data, status=status_code)
 
 class RedirectURLView(APIView):
-    """
-    Public redirect:
-    - Try Redis cache first (for <100ms)
-    - Fallback to DB
-    - Update click_count + last_accessed_at
-    """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = []  # Public endpoint
 
+    @extend_schema(
+        parameters=[],
+        responses={302: None, 404: "Short URL not found"}
+    )
     def get(self, request, short_code):
-        cache_key = f"short:{short_code}"
-        cached_url = cache.get(cache_key)
-        if cached_url:
-            return redirect(cached_url)
+        original_url = get_cached_url(short_code)
+        if original_url:
+            try:
+                short_obj = ShortURL.objects.get(short_code=short_code)
+                record_click(short_obj)
+            except ShortURL.DoesNotExist:
+                return Response({"error": "Short URL not found"}, status=status.HTTP_404_NOT_FOUND)
+            return redirect(original_url)
 
-        url_obj = get_object_or_404(ShortURL, short_code=short_code)
+        # 2️⃣ Fallback DB lookup
+        try:
+            short_obj = ShortURL.objects.get(short_code=short_code)
+        except ShortURL.DoesNotExist:
+            return Response({"error": "Short URL not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        url_obj.click_count += 1
-        url_obj.last_accessed_at = timezone.now()
-        url_obj.save()
+        # Cache result for future requests
+        cache_short_url(short_code, short_obj.original_url)  # 1 day cache
 
-        cache.set(cache_key, url_obj.original_url, timeout=60 * 60 * 24 * 30)  # 30 days
+        # Update analytics
+        record_click(short_obj)
+        return redirect(short_obj.original_url)
 
-        return redirect(url_obj.original_url)
 
 class AdminShortURLPagination(PageNumberPagination):
     page_size = 20
