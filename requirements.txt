@@ -7,3 +7,5 @@ python-dotenv>=1.0
 gunicorn
 django-environ
 environ
+drf-spectacular
+drf-spectacular-sidecar
