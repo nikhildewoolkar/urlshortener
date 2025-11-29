@@ -4,3 +4,6 @@ djangorestframework-simplejwt>=5.3
 psycopg2-binary>=2.9
 django-redis>=5.4
 python-dotenv>=1.0
+gunicorn
+django-environ
+environ

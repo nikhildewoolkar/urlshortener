@@ -12,27 +12,29 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 from datetime import timedelta
-from dotenv import load_dotenv
+import environ
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-load_dotenv(BASE_DIR / ".env")
+env = environ.Env()
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
-DEBUG = os.getenv("DEBUG", "true").lower() == "true"
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+SECRET_KEY = env("SECRET_KEY")
+DEBUG = env.bool("DEBUG", default=False)
+ALLOWED_HOSTS = env("ALLOWED_HOSTS").split(",")
 
 # SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # SESSION_COOKIE_AGE = 40  
 # SESSION_SAVE_EVERY_REQUEST = True
 # LOGOUT_REDIRECT_URL = '/login/'
 # Application definition
-AUTH_PROFILE_MODULE = 'shorturl.UserProfile'
-AUTH_PROFILE_MODULE = 'user.UserProfile'
-AUTH_PROFILE_MODULE = 'User.UserProfile'
-AUTH_PROFILE_MODULE = 'user.userprofile'
+# AUTH_PROFILE_MODULE = 'shorturl.UserProfile'
+# AUTH_PROFILE_MODULE = 'user.UserProfile'
+# AUTH_PROFILE_MODULE = 'User.UserProfile'
+# AUTH_PROFILE_MODULE = 'user.userprofile'
 
 
 # Application definition
@@ -76,7 +78,7 @@ SIMPLE_JWT = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": os.getenv("REDIS_URL", "redis://redis:6379/0"),
+        "LOCATION": env("REDIS_URL"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
@@ -123,11 +125,11 @@ WSGI_APPLICATION = 'urlshortener.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB", "urlshortener"),
-        "USER": os.getenv("POSTGRES_USER", "urlshortener"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "urlshortener"),
-        "HOST": os.getenv("POSTGRES_HOST", "db"),
-        "PORT": os.getenv("POSTGRES_PORT", "5432"),
+        "NAME": env("POSTGRES_DB", default="urlshortener"),
+        "USER": env("POSTGRES_USER", default="postgres"),
+        "PASSWORD": env("POSTGRES_PASSWORD", default="123"),
+        "HOST": env("POSTGRES_HOST", default="db"),
+        "PORT": env("POSTGRES_PORT", default="5432"),
     }
 }
 
@@ -166,8 +168,18 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
+STATIC_URL= '/assets/'
+STATIC_URL='/media/'
+STATIC_URL='/templates/'
+
+STATICFILES_DIRS=[
+    os.path.join(BASE_DIR,'shorturl/static'),
+]
+STATIC_ROOT=os.path.join(BASE_DIR,'assets')
+
+MEDIA_URL='/media/'
+MEDIA_ROOT=os.path.join(BASE_DIR,'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
