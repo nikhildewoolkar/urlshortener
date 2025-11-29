@@ -1,6 +1,12 @@
 import hashlib
+from .models import ShortURL
 
 def generate_short_code(original_url):
-    # Create a stable hash to make idempotent short URL
-    hash_value = hashlib.md5(original_url.encode()).hexdigest()
-    return hash_value[:8]
+    # stable hash ensures idempotency
+    code = hashlib.md5(original_url.encode()).hexdigest()[:8]
+
+    # collision handling
+    while ShortURL.objects.filter(short_code=code).exists():
+        code = hashlib.md5(code.encode()).hexdigest()[:10]
+
+    return code
