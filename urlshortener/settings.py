@@ -14,9 +14,6 @@ from pathlib import Path
 from datetime import timedelta
 import environ
 
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env()
@@ -25,7 +22,6 @@ env = environ.Env()
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env.bool("DEBUG", default=False)
 ALLOWED_HOSTS = env("ALLOWED_HOSTS").split(",")
-
 
 # Application definition
 
@@ -55,11 +51,13 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
+        'shorturl.throttling.IPRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
         'anon': '20/hour',
         'user': '100/hour',
         'admin': '1000/hour',
+        "ip": "20/min",
     },
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,

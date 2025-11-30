@@ -21,7 +21,14 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class ShortURLSerializer(serializers.ModelSerializer):
     original_url = serializers.URLField(required=True)
+    custom_alias = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        max_length=10,
+        write_only=True,
+    )
     class Meta:
         model = ShortURL
-        fields = ['short_code', 'original_url']
-        read_only_fields = ['short_code']
+        fields = ["short_code", "original_url", "custom_alias"]
+        read_only_fields = ["short_code"]

@@ -6,6 +6,7 @@ from django.db import IntegrityError
 from .models import ShortURL
 from django.core.cache import cache
 
+MAX_CODE_LENGTH = 10
 CACHE_TIMEOUT_SECONDS = 60 * 60 * 24  # 1 day
 
 def cache_short_url(short_code, url):
@@ -30,22 +31,40 @@ def generate_short_code(original_url: str) -> str:
     """
     base_hash = hashlib.sha256(original_url.encode()).hexdigest()[:8]
     rand = ''.join(random.choices(string.ascii_letters + string.digits, k=2))
-    return (base_hash + rand)[:10]
+    return (base_hash + rand)[:MAX_CODE_LENGTH]
 
 
-def get_or_create_short_url(original_url: str, user):
+def get_or_create_short_url(original_url: str, user, custom_alias: str | None = None):
     """
-    Business Logic:
-    - Per-user idempotency
-    - Collision handling w/ retries
+    - Idempotent per-user for same URL.
+    - Optional custom alias (with collision checks).
+    - Retries on collisions for generated codes.
     """
-    # Return existing if user already shortened same URL
+    # If user has already shortened this URL -> return same
     existing = ShortURL.objects.filter(original_url=original_url, user=user).first()
-    if existing:
+    if existing and not custom_alias:
         return existing, False
 
-    # Create new mapping
-    for _ in range(5):  # retry max 5 times
+    # If custom alias is requested
+    if custom_alias:
+        custom_alias = custom_alias.strip()
+        if len(custom_alias) > MAX_CODE_LENGTH:
+            raise ValueError("Custom alias too long (max 10 chars)")
+        # If alias already used for a different URL -> reject
+        alias_obj = ShortURL.objects.filter(short_code=custom_alias).first()
+        if alias_obj:
+            if alias_obj.original_url == original_url and alias_obj.user == user:
+                return alias_obj, False
+            raise ValueError("Custom alias already in use")
+        obj = ShortURL.objects.create(
+            original_url=original_url,
+            short_code=custom_alias,
+            user=user,
+        )
+        return obj, True
+
+    # Auto-generate short code with collision retries
+    for _ in range(5):
         short_code = generate_short_code(original_url)
         try:
             obj = ShortURL.objects.create(
@@ -55,7 +74,8 @@ def get_or_create_short_url(original_url: str, user):
             )
             return obj, True
         except IntegrityError:
-            continue  # regenerate on collision
+            continue
+
     raise ValueError("Unable to generate unique short code after multiple attempts")
 
 
