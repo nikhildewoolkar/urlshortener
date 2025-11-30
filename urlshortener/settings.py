@@ -54,7 +54,7 @@ REST_FRAMEWORK = {
         'shorturl.throttling.IPRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '20/hour',
+        'anon': '50/hour',
         'user': '100/hour',
         'admin': '1000/hour',
         "ip": "20/min",
