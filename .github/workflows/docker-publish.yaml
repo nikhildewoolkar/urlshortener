@@ -47,6 +47,14 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          for i in {1..30}; do
+            pg_isready -h postgres -U postgres -d urlshortener && break
+            echo "Postgres not ready yet..."
+            sleep 2
+          done
+
       - name: Run migrations
         run: python manage.py migrate --noinput
 
