@@ -28,7 +28,7 @@ jobs:
       POSTGRES_DB: urlshortener
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_HOST: localhost   # 👈 FINAL FIX
+      POSTGRES_HOST: localhost
       POSTGRES_PORT: 5432
       DJANGO_SETTINGS_MODULE: urlshortener.settings
       SECRET_KEY: "test"

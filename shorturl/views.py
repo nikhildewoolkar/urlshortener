@@ -85,7 +85,7 @@ class ShortenURLView(APIView):
 
 
 class RedirectURLView(APIView):
-    permission_classes = []  # Public endpoint
+    permission_classes = []
 
     @extend_schema(
         responses={302: None, 404: {"example": {"error": "Short URL not found"}}},
@@ -100,16 +100,13 @@ class RedirectURLView(APIView):
                 return Response({"error": "Short URL not found"}, status=status.HTTP_404_NOT_FOUND)
             return redirect(original_url)
 
-        # 2️⃣ Fallback DB lookup
         try:
             short_obj = ShortURL.objects.get(short_code=short_code)
         except ShortURL.DoesNotExist:
             return Response({"error": "Short URL not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Cache result for future requests
-        cache_short_url(short_code, short_obj.original_url)  # 1 day cache
+        cache_short_url(short_code, short_obj.original_url)
 
-        # Update analytics
         record_click(short_obj)
         return redirect(short_obj.original_url)
 
